@@ -18,3 +18,13 @@ go run server.go
 ```
 
 
+## 1. Create your schema at schema.graphqls
+
+## 2. Generate the schema.resolvers / model_gen.go  /generated.go by running 
+`go run github.com/99designs/gqlgen generate`
+
+PS: When regenerating the code on VS Code, you might have a bunch of linting errors.
+Reloading the Page should fix them.
+
+## 3. Confirm the API can still work
+`go run server.go`

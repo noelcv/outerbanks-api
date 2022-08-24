@@ -11,6 +11,7 @@ import (
 	"strconv"
 )
 
+// UpsertCharacter is the resolver for the upsertCharacter field.
 func (r *mutationResolver) UpsertCharacter(ctx context.Context, input model.CharacterInput) (*model.Character, error) {
 	id := input.ID
 	var character model.Character
@@ -34,7 +35,7 @@ func (r *mutationResolver) UpsertCharacter(ctx context.Context, input model.Char
 		}
 		r.Resolver.CharacterStore[*id] = character
 	} else {
-		// generate unique id
+		//generate unique id
 		nid := strconv.Itoa(n + 1)
 		character.ID = nid
 		if input.IsHero != nil {
@@ -42,10 +43,10 @@ func (r *mutationResolver) UpsertCharacter(ctx context.Context, input model.Char
 		}
 		r.Resolver.CharacterStore[nid] = character
 	}
-
 	return &character, nil
 }
 
+// Character is the resolver for the character field.
 func (r *queryResolver) Character(ctx context.Context, id string) (*model.Character, error) {
 	character, ok := r.Resolver.CharacterStore[id]
 	if !ok {
@@ -54,16 +55,16 @@ func (r *queryResolver) Character(ctx context.Context, id string) (*model.Charac
 	return &character, nil
 }
 
+// Characters is the resolver for the characters field.
 func (r *queryResolver) Characters(ctx context.Context, cliqueType model.CliqueType) ([]*model.Character, error) {
-	characters := make([]*model.Character, 0)
+  characters := make([]*model.Character, 0)
 	for idx := range r.Resolver.CharacterStore {
 		character := r.Resolver.CharacterStore[idx]
+		//segregate by cliqueType --> pogues && kooks
 		if character.CliqueType == cliqueType {
-
 			characters = append(characters, &character)
 		}
 	}
-
 	return characters, nil
 }
 
