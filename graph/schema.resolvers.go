@@ -55,14 +55,9 @@ func (r *queryResolver) Character(ctx context.Context, id string) (*model.Charac
 	return &character, nil
 }
 
-// Pogues is the resolver for the pogues field.
-func (r *queryResolver) Pogues(ctx context.Context) ([]*model.Character, error) {
-	panic(fmt.Errorf("not implemented: Pogues - pogues"))
-}
-
-// Kooks is the resolver for the kooks field.
-func (r *queryResolver) Kooks(ctx context.Context) ([]*model.Character, error) {
-	panic(fmt.Errorf("not implemented: Kooks - kooks"))
+// Characters is the resolver for the characters field.
+func (r *queryResolver) Characters(ctx context.Context, cliqueType model.CliqueType) ([]*model.Character, error) {
+	panic(fmt.Errorf("not implemented: Characters - characters"))
 }
 
 // Mutation returns generated.MutationResolver implementation.

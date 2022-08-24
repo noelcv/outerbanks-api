@@ -5,8 +5,7 @@
 
 type Query {
   character(id:ID!): Character
-  pogues: [Character]!
-  kooks: [Character]!
+  characters(cliqueType: CliqueType!): [Character!]
 }
 
 type Mutation {

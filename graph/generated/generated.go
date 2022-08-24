@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"strconv"
 	"sync"
-	"sync/atomic"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
@@ -56,9 +55,8 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Character func(childComplexity int, id string) int
-		Kooks     func(childComplexity int) int
-		Pogues    func(childComplexity int) int
+		Character  func(childComplexity int, id string) int
+		Characters func(childComplexity int, cliqueType model.CliqueType) int
 	}
 }
 
@@ -67,8 +65,7 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	Character(ctx context.Context, id string) (*model.Character, error)
-	Pogues(ctx context.Context) ([]*model.Character, error)
-	Kooks(ctx context.Context) ([]*model.Character, error)
+	Characters(ctx context.Context, cliqueType model.CliqueType) ([]*model.Character, error)
 }
 
 type executableSchema struct {
@@ -138,19 +135,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Character(childComplexity, args["id"].(string)), true
 
-	case "Query.kooks":
-		if e.complexity.Query.Kooks == nil {
+	case "Query.characters":
+		if e.complexity.Query.Characters == nil {
 			break
 		}
 
-		return e.complexity.Query.Kooks(childComplexity), true
-
-	case "Query.pogues":
-		if e.complexity.Query.Pogues == nil {
-			break
+		args, err := ec.field_Query_characters_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
 		}
 
-		return e.complexity.Query.Pogues(childComplexity), true
+		return e.complexity.Query.Characters(childComplexity, args["cliqueType"].(model.CliqueType)), true
 
 	}
 	return 0, false
@@ -228,8 +223,7 @@ var sources = []*ast.Source{
 
 type Query {
   character(id:ID!): Character
-  pogues: [Character]!
-  kooks: [Character]!
+  characters(cliqueType: CliqueType!): [Character!]
 }
 
 type Mutation {
@@ -305,6 +299,21 @@ func (ec *executionContext) field_Query_character_args(ctx context.Context, rawA
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_characters_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.CliqueType
+	if tmp, ok := rawArgs["cliqueType"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cliqueType"))
+		arg0, err = ec.unmarshalNCliqueType2catᚑturnerᚋouterbanksᚑapiᚋgraphᚋmodelᚐCliqueType(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["cliqueType"] = arg0
 	return args, nil
 }
 
@@ -649,8 +658,8 @@ func (ec *executionContext) fieldContext_Query_character(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_pogues(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_pogues(ctx, field)
+func (ec *executionContext) _Query_characters(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_characters(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -663,24 +672,21 @@ func (ec *executionContext) _Query_pogues(ctx context.Context, field graphql.Col
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Pogues(rctx)
+		return ec.resolvers.Query().Characters(rctx, fc.Args["cliqueType"].(model.CliqueType))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.([]*model.Character)
 	fc.Result = res
-	return ec.marshalNCharacter2ᚕᚖcatᚑturnerᚋouterbanksᚑapiᚋgraphᚋmodelᚐCharacter(ctx, field.Selections, res)
+	return ec.marshalOCharacter2ᚕᚖcatᚑturnerᚋouterbanksᚑapiᚋgraphᚋmodelᚐCharacterᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_pogues(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_characters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -700,59 +706,16 @@ func (ec *executionContext) fieldContext_Query_pogues(ctx context.Context, field
 			return nil, fmt.Errorf("no field named %q was found under type Character", field.Name)
 		},
 	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_kooks(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_kooks(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
 	defer func() {
 		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Kooks(rctx)
-	})
-	if err != nil {
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_characters_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.Character)
-	fc.Result = res
-	return ec.marshalNCharacter2ᚕᚖcatᚑturnerᚋouterbanksᚑapiᚋgraphᚋmodelᚐCharacter(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_kooks(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Character_id(ctx, field)
-			case "name":
-				return ec.fieldContext_Character_name(ctx, field)
-			case "isHero":
-				return ec.fieldContext_Character_isHero(ctx, field)
-			case "cliqueType":
-				return ec.fieldContext_Character_cliqueType(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Character", field.Name)
-		},
+		return
 	}
 	return fc, nil
 }
@@ -2846,7 +2809,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
-		case "pogues":
+		case "characters":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -2855,33 +2818,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_pogues(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return rrm(innerCtx)
-			})
-		case "kooks":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_kooks(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
+				res = ec._Query_characters(ctx, field)
 				return res
 			}
 
@@ -3252,44 +3189,6 @@ func (ec *executionContext) marshalNCharacter2catᚑturnerᚋouterbanksᚑapiᚋ
 	return ec._Character(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNCharacter2ᚕᚖcatᚑturnerᚋouterbanksᚑapiᚋgraphᚋmodelᚐCharacter(ctx context.Context, sel ast.SelectionSet, v []*model.Character) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOCharacter2ᚖcatᚑturnerᚋouterbanksᚑapiᚋgraphᚋmodelᚐCharacter(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	return ret
-}
-
 func (ec *executionContext) marshalNCharacter2ᚖcatᚑturnerᚋouterbanksᚑapiᚋgraphᚋmodelᚐCharacter(ctx context.Context, sel ast.SelectionSet, v *model.Character) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -3622,6 +3521,53 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	}
 	res := graphql.MarshalBoolean(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOCharacter2ᚕᚖcatᚑturnerᚋouterbanksᚑapiᚋgraphᚋmodelᚐCharacterᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Character) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNCharacter2ᚖcatᚑturnerᚋouterbanksᚑapiᚋgraphᚋmodelᚐCharacter(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalOCharacter2ᚖcatᚑturnerᚋouterbanksᚑapiᚋgraphᚋmodelᚐCharacter(ctx context.Context, sel ast.SelectionSet, v *model.Character) graphql.Marshaler {
