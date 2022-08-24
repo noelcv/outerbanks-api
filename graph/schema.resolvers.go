@@ -57,7 +57,15 @@ func (r *queryResolver) Character(ctx context.Context, id string) (*model.Charac
 
 // Characters is the resolver for the characters field.
 func (r *queryResolver) Characters(ctx context.Context, cliqueType model.CliqueType) ([]*model.Character, error) {
-	panic(fmt.Errorf("not implemented: Characters - characters"))
+  characters := make([]*model.Character, 0)
+	for idx := range r.Resolver.CharacterStore {
+		character := r.Resolver.CharacterStore[idx]
+		//segregate by cliqueType --> pogues && kooks
+		if character.CliqueType == cliqueType {
+			characters = append(characters, &character)
+		}
+	}
+	return characters, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.
