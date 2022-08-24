@@ -18,3 +18,10 @@ go run server.go
 ```
 
 
+## 1. Create your schema at schema.graphqls
+
+## 2. Generate the schema.resolvers / model_gen.go  /generated.go by running 
+`go run github.com/99designs/gqlgen generate`
+
+## 3. Confirm the API can still work
+`go run server.go`
