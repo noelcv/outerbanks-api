@@ -16,22 +16,31 @@ func (r *mutationResolver) UpsertCharacter(ctx context.Context, input model.Char
 	id := input.ID
 	var character model.Character
 	character.Name = input.Name
-	
+	character.CliqueType = input.CliqueType
+
 	n := len(r.Resolver.CharacterStore)
 	if n == 0 {
 		r.Resolver.CharacterStore = make(map[string]model.Character)
 	}
-	
+
 	if id != nil {
-		_, ok:= r.Resolver.CharacterStore[*id]
-		 if !ok {
-			  return nil, fmt.Errorf("not found")
+		cs, ok := r.Resolver.CharacterStore[*id]
+		if !ok {
+			return nil, fmt.Errorf("not found")
+		}
+		if input.IsHero != nil {
+			character.IsHero = *input.IsHero
+		} else {
+			character.IsHero = cs.IsHero
 		}
 		r.Resolver.CharacterStore[*id] = character
 	} else {
 		//generate unique id
-		nid := strconv.Itoa(n+1)
+		nid := strconv.Itoa(n + 1)
 		character.ID = nid
+		if input.IsHero != nil {
+			character.IsHero = *input.IsHero
+		}
 		r.Resolver.CharacterStore[nid] = character
 	}
 	return &character, nil
